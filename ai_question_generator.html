@@ -1,0 +1,1592 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Question Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            padding: 30px;
+        }
+
+        .upload-section {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            transition: all 0.3s ease;
+        }
+
+        .upload-section:hover {
+            border-color: #4facfe;
+            background: #f0f8ff;
+        }
+
+        .upload-section.dragover {
+            border-color: #4facfe;
+            background: #e3f2fd;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-btn {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .settings-section {
+            margin-bottom: 30px;
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            border: 1px solid #dee2e6;
+        }
+
+        .settings-section h3 {
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 1.3em;
+        }
+
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .setting-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .setting-item label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 0.95em;
+        }
+
+        .setting-input {
+            padding: 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        .setting-input:focus {
+            outline: none;
+            border-color: #4facfe;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+        }
+
+        .setting-input select {
+            cursor: pointer;
+        }
+
+        .example-section {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #4facfe;
+            font-size: 0.9em;
+            color: #1565c0;
+        }
+
+        .preview-section {
+            margin-bottom: 30px;
+        }
+
+        .json-preview {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .generate-btn {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1.2em;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .generate-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .results-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4facfe;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .success {
+            background: #d1edff;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .file-info {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+        }
+
+        /* Preview Section Styles */
+        .preview-container {
+            display: none;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-top: 20px;
+            overflow: hidden;
+        }
+
+        .preview-header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 15px 25px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .preview-header h3 {
+            margin: 0;
+            font-size: 1.3em;
+        }
+
+        .preview-controls {
+            background: #f8f9fa;
+            padding: 10px 25px;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .preview-nav {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .preview-nav button {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 5px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .preview-nav button:hover {
+            background: #5a6268;
+        }
+
+        .preview-nav button:disabled {
+            background: #adb5bd;
+            cursor: not-allowed;
+        }
+
+        .question-counter {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+
+        .preview-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .preview-actions button {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.85em;
+        }
+
+        .preview-actions button:hover {
+            background: #218838;
+        }
+
+        .preview-actions button.delete {
+            background: #dc3545;
+        }
+
+        .preview-actions button.delete:hover {
+            background: #c82333;
+        }
+
+        .preview-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            min-height: 500px;
+        }
+
+        .preview-visual {
+            padding: 25px;
+            border-right: 1px solid #dee2e6;
+            background: #fafafa;
+        }
+
+        .preview-json {
+            padding: 25px;
+            background: #2d3748;
+            color: #e2e8f0;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            overflow-y: auto;
+        }
+
+        .question-display {
+            background: white;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .question-title {
+            background: #4facfe;
+            color: white;
+            text-align: center;
+            padding: 15px;
+            margin: -20px -20px 20px -20px;
+            border-radius: 8px 8px 0 0;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .question-content {
+            font-size: 1.1em;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .question-options {
+            display: grid;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .option-item {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 12px 15px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .option-item:hover {
+            border-color: #4facfe;
+            background: #e3f2fd;
+        }
+
+        .option-item.correct {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+
+        .check-button {
+            background: #17a2b8;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            width: 100%;
+        }
+
+        .check-button:hover {
+            background: #138496;
+        }
+
+        .json-code {
+            font-size: 0.85em;
+            line-height: 1.4;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .json-key {
+            color: #63b3ed;
+        }
+
+        .json-string {
+            color: #68d391;
+        }
+
+        .json-number {
+            color: #fbb6ce;
+        }
+
+        .json-boolean {
+            color: #f6ad55;
+        }
+
+        /* Word Selection Styles */
+        .question-subtitle {
+            font-size: 0.95em;
+            color: #6c757d;
+            margin-bottom: 15px;
+            font-style: italic;
+        }
+
+        .word-selection-area {
+            margin-bottom: 20px;
+        }
+
+        .word-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 2px dashed #dee2e6;
+        }
+
+        .word-option {
+            background: #4facfe;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .word-option:hover {
+            background: #3d8bfe;
+            transform: translateY(-1px);
+        }
+
+        .word-option.selected {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .selected-words-area {
+            background: white;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            min-height: 60px;
+            position: relative;
+        }
+
+        .selected-words {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            min-height: 30px;
+            margin-bottom: 10px;
+        }
+
+        .selected-word {
+            background: #28a745;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+
+        .selected-word:hover {
+            background: #dc3545;
+        }
+
+        .selected-word::after {
+            content: "×";
+            margin-left: 5px;
+            font-weight: bold;
+        }
+
+        .clear-selection {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8em;
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+
+        .clear-selection:hover {
+            background: #5a6268;
+        }
+
+        .correct-order {
+            border-color: #28a745 !important;
+            background: #d4edda !important;
+        }
+
+        .incorrect-order {
+            border-color: #dc3545 !important;
+            background: #f8d7da !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 AI Question Generator</h1>
+            <p>Upload JSON files and generate similar questions using Google Gemini AI</p>
+        </div>
+
+        <div class="main-content">
+            <!-- File Upload Section -->
+            <div class="upload-section" id="uploadSection">
+                <h3>📁 Upload JSON File</h3>
+                <p>Drag and drop your JSON file here or click to browse</p>
+                <br>
+                <input type="file" id="fileInput" class="file-input" accept=".json" />
+                <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                    Choose File
+                </button>
+            </div>
+
+            <div id="fileInfo" class="file-info" style="display: none;"></div>
+
+            <!-- Language and Settings Section -->
+            <div class="settings-section">
+                <h3>⚙️ Exercise Settings</h3>
+                
+                <div class="settings-grid">
+                    <div class="setting-item">
+                        <label for="languageSelect">🌐 Language:</label>
+                        <select id="languageSelect" class="setting-input">
+                            <option value="English">English ↔ Mongolian</option>
+                            <option value="Russian">Russian ↔ Mongolian</option>
+                            <option value="Chinese">Chinese ↔ Mongolian</option>
+                            <option value="Korean">Korean ↔ Mongolian</option>
+                            <option value="Japanese">Japanese ↔ Mongolian</option>
+                        </select>
+                    </div>
+                    
+                    <div class="setting-item">
+                        <label for="topicInput">📚 Topic:</label>
+                        <input type="text" id="topicInput" class="setting-input" 
+                               placeholder="e.g., animals, sports, food, family" 
+                               value="animals">
+                    </div>
+                    
+                    <div class="setting-item">
+                        <label for="numQuestions">🔢 Number of Questions:</label>
+                        <input type="number" id="numQuestions" class="setting-input" 
+                               min="1" max="20" value="10">
+                    </div>
+                </div>
+                
+                <div class="example-section">
+                    <p><strong>📋 Example:</strong> Select "English", topic "animals", 10 questions → generates 10 animal-related exercises with English↔Mongolian translations</p>
+                </div>
+            </div>
+
+            <!-- Preview Section -->
+            <div class="preview-section">
+                <h3>👀 JSON Preview:</h3>
+                <div id="jsonPreview" class="json-preview">
+                    No file selected yet...
+                </div>
+            </div>
+
+            <!-- Generate Buttons -->
+            <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                <button id="generateBtn" class="generate-btn" disabled style="flex: 1;">
+                    🚀 Generate Similar Questions
+                </button>
+                <button id="generateFastBtn" class="generate-btn" disabled style="flex: 1; background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                    ⚡ Fast Generate (30s)
+                </button>
+            </div>
+            
+            <div style="background: #fff3cd; padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 0.9em; border: 1px solid #ffeaa7;">
+                <strong>💡 Speed Tips:</strong>
+                <ul style="margin: 5px 0; padding-left: 20px;">
+                    <li><strong>Fast Mode:</strong> Optimized for speed (~30 seconds)</li>
+                    <li><strong>Normal Mode:</strong> Better quality but slower (~1-2 minutes)</li>
+                    <li><strong>Tip:</strong> Use shorter, specific prompts for faster results</li>
+                </ul>
+                <div style="margin-top: 10px;">
+                    <button onclick="runDebugTests()" style="background: #6c757d; color: white; padding: 5px 15px; border: none; border-radius: 3px; cursor: pointer; font-size: 0.8em;">
+                        🔧 Debug Tests
+                    </button>
+                    <button onclick="checkHealth()" style="background: #17a2b8; color: white; padding: 5px 15px; border: none; border-radius: 3px; cursor: pointer; font-size: 0.8em; margin-left: 5px;">
+                        ❤️ Health Check
+                    </button>
+                    <button onclick="testMultiPreview()" style="background: #6f42c1; color: white; padding: 5px 15px; border: none; border-radius: 3px; cursor: pointer; font-size: 0.8em; margin-left: 5px;">
+                        🧪 Test Multi Preview
+                    </button>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div id="resultsSection" class="results-section">
+                <h3>📝 Generated Questions:</h3>
+                <div id="results"></div>
+            </div>
+
+            <!-- Preview Container -->
+            <div id="previewContainer" class="preview-container">
+                <div class="preview-header">
+                    <h3>📋 Interactive Preview</h3>
+                </div>
+                <div class="preview-controls">
+                    <div class="preview-nav">
+                        <button id="prevBtn" onclick="navigateQuestion(-1)">Prev</button>
+                        <span id="questionCounter" class="question-counter">1 of 1</span>
+                        <button id="nextBtn" onclick="navigateQuestion(1)">Next</button>
+                    </div>
+                    <div class="preview-actions">
+                        <button onclick="copyCurrentQuestion()">📋 Copy</button>
+                        <button onclick="duplicateQuestion()">Duplicate</button>
+                        <button onclick="deleteQuestion()" class="delete">Delete</button>
+                        <button onclick="moveQuestion(-1)">Move up</button>
+                        <button onclick="moveQuestion(1)">Move down</button>
+                    </div>
+                </div>
+                <div class="preview-content">
+                    <div class="preview-visual">
+                        <div id="questionDisplay" class="question-display">
+                            <!-- Question will be rendered here -->
+                        </div>
+                    </div>
+                    <div class="preview-json">
+                        <div id="jsonDisplay" class="json-code">
+                            <!-- JSON will be displayed here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let uploadedData = null;
+        const fileInput = document.getElementById('fileInput');
+        const uploadSection = document.getElementById('uploadSection');
+        const jsonPreview = document.getElementById('jsonPreview');
+        const generateBtn = document.getElementById('generateBtn');
+        const generateFastBtn = document.getElementById('generateFastBtn');
+        const resultsSection = document.getElementById('resultsSection');
+        const results = document.getElementById('results');
+        const fileInfo = document.getElementById('fileInfo');
+
+        // Drag and drop functionality
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.classList.add('dragover');
+        });
+
+        uploadSection.addEventListener('dragleave', () => {
+            uploadSection.classList.remove('dragover');
+        });
+
+        uploadSection.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadSection.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        // File input change
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            if (!file.name.endsWith('.json')) {
+                showError('Please select a JSON file.');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    uploadedData = JSON.parse(e.target.result);
+                    displayFileInfo(file);
+                    displayPreview(uploadedData);
+                    generateBtn.disabled = false;
+                    generateFastBtn.disabled = false;
+                    hideError();
+                } catch (error) {
+                    showError('Invalid JSON file. Please check the file format.');
+                    uploadedData = null;
+                    generateBtn.disabled = true;
+                    generateFastBtn.disabled = true;
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function displayFileInfo(file) {
+            fileInfo.style.display = 'block';
+            fileInfo.innerHTML = `
+                <strong>File:</strong> ${file.name} <br>
+                <strong>Size:</strong> ${(file.size / 1024).toFixed(2)} KB <br>
+                <strong>Type:</strong> ${file.type || 'application/json'}
+            `;
+        }
+
+        function displayPreview(data) {
+            jsonPreview.textContent = JSON.stringify(data, null, 2);
+        }
+
+        function showError(message) {
+            const existing = document.querySelector('.error');
+            if (existing) existing.remove();
+
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error';
+            errorDiv.textContent = message;
+            document.querySelector('.main-content').insertBefore(errorDiv, uploadSection);
+        }
+
+        function hideError() {
+            const existing = document.querySelector('.error');
+            if (existing) existing.remove();
+        }
+
+        function showSuccess(message) {
+            const existing = document.querySelector('.success');
+            if (existing) existing.remove();
+
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success';
+            successDiv.textContent = message;
+            document.querySelector('.main-content').insertBefore(successDiv, resultsSection);
+        }
+
+        function showLoading() {
+            results.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p id="loadingText">Initializing Gemini AI...</p>
+                    <div style="background: #f0f8ff; padding: 10px; border-radius: 5px; margin-top: 10px; font-size: 0.9em;">
+                        <div>📊 <strong>Optimization Tips:</strong></div>
+                        <div>• Shorter prompts = faster generation</div>
+                        <div>• Smaller JSON files = quicker processing</div>
+                        <div>• Using Gemini 2.5 Pro for best quality</div>
+                    </div>
+                </div>
+            `;
+            resultsSection.style.display = 'block';
+            
+            // Simulate progress updates
+            let step = 0;
+            const steps = [
+                "Initializing Gemini AI...",
+                "Analyzing JSON structure...", 
+                "Processing your prompt...",
+                "Generating similar questions...",
+                "Formatting results..."
+            ];
+            
+            const progressInterval = setInterval(() => {
+                step++;
+                if (step < steps.length) {
+                    document.getElementById('loadingText').textContent = steps[step];
+                } else {
+                    clearInterval(progressInterval);
+                }
+            }, 2000);
+            
+            // Store interval ID to clear it later
+            window.currentProgressInterval = progressInterval;
+        }
+
+        // Generate questions
+        generateBtn.addEventListener('click', async () => {
+            if (!uploadedData) {
+                showError('Please upload a JSON file first.');
+                return;
+            }
+
+            // Get settings from UI
+            const language = document.getElementById('languageSelect').value;
+            const topic = document.getElementById('topicInput').value.trim();
+            const numQuestions = parseInt(document.getElementById('numQuestions').value);
+
+            if (!topic) {
+                showError('Please enter a topic.');
+                return;
+            }
+
+            if (!numQuestions || numQuestions < 1 || numQuestions > 20) {
+                showError('Please enter a valid number of questions (1-20).');
+                return;
+            }
+
+            showLoading();
+            generateBtn.disabled = true;
+
+            try {
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        language: language,
+                        topic: topic,
+                        num_questions: numQuestions,
+                        data: uploadedData
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+
+                // Clear progress interval
+                if (window.currentProgressInterval) {
+                    clearInterval(window.currentProgressInterval);
+                }
+                
+                displayResults(result.generated_questions);
+                showSuccess('Questions generated successfully!');
+
+            } catch (error) {
+                // Clear progress interval on error
+                if (window.currentProgressInterval) {
+                    clearInterval(window.currentProgressInterval);
+                }
+                console.error('Error generating questions:', error);
+                results.innerHTML = `
+                    <div class="error">
+                        <strong>Error:</strong> ${error.message}
+                        <br><br>
+                        <strong>Troubleshooting:</strong>
+                        <ul>
+                            <li>Make sure the backend server is running</li>
+                            <li>Check if your Gemini API key is configured</li>
+                            <li>Verify your internet connection</li>
+                        </ul>
+                    </div>
+                `;
+            } finally {
+                generateBtn.disabled = false;
+                generateFastBtn.disabled = false;
+            }
+        });
+
+        // Fast Generate button
+        generateFastBtn.addEventListener('click', async () => {
+            if (!uploadedData) {
+                showError('Please upload a JSON file first.');
+                return;
+            }
+
+            // Get settings from UI
+            const language = document.getElementById('languageSelect').value;
+            const topic = document.getElementById('topicInput').value.trim();
+            const numQuestions = parseInt(document.getElementById('numQuestions').value);
+
+            if (!topic) {
+                showError('Please enter a topic.');
+                return;
+            }
+
+            if (!numQuestions || numQuestions < 1 || numQuestions > 20) {
+                showError('Please enter a valid number of questions (1-20).');
+                return;
+            }
+
+            showLoading();
+            generateBtn.disabled = true;
+            generateFastBtn.disabled = true;
+
+            try {
+                const response = await fetch('/generate-fast', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        language: language,
+                        topic: topic,
+                        num_questions: numQuestions,
+                        data: uploadedData
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+
+                // Clear progress interval
+                if (window.currentProgressInterval) {
+                    clearInterval(window.currentProgressInterval);
+                }
+                
+                displayResults(result.generated_questions);
+                showSuccess('Questions generated successfully in fast mode! ⚡');
+
+            } catch (error) {
+                // Clear progress interval on error
+                if (window.currentProgressInterval) {
+                    clearInterval(window.currentProgressInterval);
+                }
+                console.error('Error generating questions:', error);
+                results.innerHTML = `
+                    <div class="error">
+                        <strong>Fast Generation Error:</strong> ${error.message}
+                        <br><br>
+                        <strong>Try:</strong>
+                        <ul>
+                            <li>Use normal mode for complex requests</li>
+                            <li>Simplify your prompt</li>
+                            <li>Check your internet connection</li>
+                        </ul>
+                    </div>
+                `;
+            } finally {
+                generateBtn.disabled = false;
+                generateFastBtn.disabled = false;
+            }
+        });
+
+        function displayResults(generatedQuestions) {
+            // Store questions globally for button access
+            window.lastGeneratedQuestions = generatedQuestions;
+            
+            // Debug: Log the actual generated questions structure
+            console.log('🎯 ACTUAL Generated Questions received:', generatedQuestions);
+            console.log('🔍 Type of generatedQuestions:', typeof generatedQuestions);
+            console.log('📊 Is it an array?', Array.isArray(generatedQuestions));
+            if (Array.isArray(generatedQuestions)) {
+                console.log('📈 Array length:', generatedQuestions.length);
+                console.log('📝 First question:', generatedQuestions[0]);
+            } else {
+                console.log('🔧 Keys of object:', Object.keys(generatedQuestions));
+            }
+            
+            results.innerHTML = `
+                <div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid #dee2e6;">
+                    <h4>🎯 Generated Questions:</h4>
+                    <pre style="background: #f8f9fa; padding: 15px; border-radius: 5px; overflow-x: auto; margin-top: 10px;">${JSON.stringify(generatedQuestions, null, 2)}</pre>
+                    <br>
+                    <button onclick="downloadResults()" style="background: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">
+                        💾 Download JSON
+                    </button>
+                    <button onclick="showPreview(window.lastGeneratedQuestions)" style="background: #4facfe; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">
+                        👁️ Interactive Preview
+                    </button>
+                </div>
+            `;
+            
+            // Automatically show preview
+            showPreview(generatedQuestions);
+        }
+
+        function downloadResults() {
+            // Use current questions if preview is active and modified
+            const questionsToDownload = currentQuestions.length > 0 ? currentQuestions : 
+                                      (window.lastGeneratedQuestions || JSON.parse(results.querySelector('pre').textContent));
+            
+            const blob = new Blob([JSON.stringify(questionsToDownload, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'generated_questions.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Preview Functions
+        let currentQuestions = [];
+        let currentQuestionIndex = 0;
+
+        function showPreview(questions) {
+            console.log('🔍 ShowPreview called with:', questions);
+            
+            // Handle different data structures
+            let questionsArray;
+            
+            if (Array.isArray(questions)) {
+                // Direct array of questions (like test data)
+                questionsArray = questions;
+                console.log('📋 Direct array detected');
+            } else if (questions && questions.data && Array.isArray(questions.data.questions)) {
+                // Nested structure from AI backend: { data: { questions: [...] } }
+                questionsArray = questions.data.questions;
+                console.log('📋 Nested structure detected - extracting questions from data.questions');
+            } else if (questions && Array.isArray(questions.questions)) {
+                // Alternative nested structure: { questions: [...] }
+                questionsArray = questions.questions;
+                console.log('📋 Alternative nested structure detected');
+            } else {
+                // Single question object
+                questionsArray = [questions];
+                console.log('📋 Single question detected');
+            }
+            
+            console.log('📊 Final questions array:', questionsArray);
+            console.log('📈 Array length:', questionsArray.length);
+            
+            currentQuestions = questionsArray.sort((a, b) => {
+                const indexA = a.index !== undefined ? a.index : 0;
+                const indexB = b.index !== undefined ? b.index : 0;
+                return indexA - indexB;
+            });
+            currentQuestionIndex = 0;
+            
+            console.log('✅ Current questions after sorting:', currentQuestions);
+            console.log('🔢 Starting with question index:', currentQuestionIndex);
+            
+            // Reset word selection
+            selectedWords = [];
+            
+            const previewContainer = document.getElementById('previewContainer');
+            previewContainer.style.display = 'block';
+            
+            updatePreview();
+            updateNavigationButtons();
+        }
+
+        function updatePreview() {
+            console.log('🔄 UpdatePreview called');
+            console.log('📊 Current questions length:', currentQuestions.length);
+            console.log('🔢 Current index:', currentQuestionIndex);
+            
+            if (currentQuestions.length === 0) {
+                console.log('❌ No questions to display');
+                return;
+            }
+            
+            const question = currentQuestions[currentQuestionIndex];
+            console.log('📝 Displaying question:', question);
+            
+            updateQuestionDisplay(question);
+            updateJsonDisplay(question);
+            updateQuestionCounter();
+        }
+
+        function updateQuestionDisplay(question) {
+            const questionDisplay = document.getElementById('questionDisplay');
+            
+            // Handle different question formats
+            let questionText = '';
+            let options = [];
+            let questionMode = 'CHOOSE';
+            let answerMode = 'CHOOSE';
+            
+            if (question.question_chunks && question.question_chunks.length > 0) {
+                questionText = question.question_chunks[0].text || '';
+            } else if (question.question) {
+                questionText = question.question;
+            } else if (question.text) {
+                questionText = question.text;
+            }
+            
+            if (question.options && Array.isArray(question.options)) {
+                options = question.options;
+            } else if (question.choices && Array.isArray(question.choices)) {
+                options = question.choices;
+            }
+            
+            if (question.question_mode) {
+                questionMode = question.question_mode;
+            } else if (question.type) {
+                questionMode = question.type.toUpperCase();
+            }
+            
+            if (question.answer_mode) {
+                answerMode = question.answer_mode;
+            }
+            
+            // Show question index in title
+            const questionIndex = question.index !== undefined ? question.index : 'N/A';
+            
+            // Render based on answer mode
+            if (answerMode === 'SELECT_WORDS') {
+                questionDisplay.innerHTML = `
+                    <div class="question-title">${questionMode} - ${answerMode} (Index: ${questionIndex})</div>
+                    <div class="question-content">${questionText}</div>
+                    <div class="question-subtitle">Select and arrange the words in correct order:</div>
+                    <div class="word-selection-area">
+                        <div class="word-options">
+                            ${options.map((option, index) => `
+                                <div class="word-option" data-index="${index}" onclick="selectWord(${index})">
+                                    ${option.text || option}
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div class="selected-words-area">
+                            <div class="selected-words" id="selectedWords"></div>
+                            <button class="clear-selection" onclick="clearSelection()">Clear</button>
+                        </div>
+                    </div>
+                    <button class="check-button" onclick="checkWordOrder()">Check Answer</button>
+                `;
+            } else {
+                // Default multiple choice display
+                questionDisplay.innerHTML = `
+                    <div class="question-title">${questionMode} (Index: ${questionIndex})</div>
+                    <div class="question-content">${questionText}</div>
+                    <div class="question-options">
+                        ${options.map((option, index) => `
+                            <div class="option-item" onclick="selectOption(${index})">
+                                ${option.text || option}
+                            </div>
+                        `).join('')}
+                    </div>
+                    <button class="check-button" onclick="checkAnswer()">Check</button>
+                `;
+            }
+        }
+
+        function updateJsonDisplay(question) {
+            const jsonDisplay = document.getElementById('jsonDisplay');
+            const formattedJson = formatJsonWithColors(JSON.stringify(question, null, 2));
+            jsonDisplay.innerHTML = formattedJson;
+        }
+
+        function formatJsonWithColors(jsonString) {
+            return jsonString
+                .replace(/("([^"\\]|\\.)*")\s*:/g, '<span class="json-key">$1</span>:')
+                .replace(/:\s*("([^"\\]|\\.)*")/g, ': <span class="json-string">$1</span>')
+                .replace(/:\s*(\d+(\.\d+)?)/g, ': <span class="json-number">$1</span>')
+                .replace(/:\s*(true|false)/g, ': <span class="json-boolean">$1</span>');
+        }
+
+        function updateQuestionCounter() {
+            const counter = document.getElementById('questionCounter');
+            counter.textContent = `${currentQuestionIndex + 1} of ${currentQuestions.length}`;
+            
+            // Debug info
+            console.log('Current question index:', currentQuestionIndex);
+            console.log('Total questions:', currentQuestions.length);
+            console.log('Current question:', currentQuestions[currentQuestionIndex]);
+        }
+
+        function updateNavigationButtons() {
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            
+            prevBtn.disabled = currentQuestionIndex === 0;
+            nextBtn.disabled = currentQuestionIndex === currentQuestions.length - 1;
+        }
+
+        function navigateQuestion(direction) {
+            const newIndex = currentQuestionIndex + direction;
+            if (newIndex >= 0 && newIndex < currentQuestions.length) {
+                currentQuestionIndex = newIndex;
+                
+                // Reset word selection when navigating
+                selectedWords = [];
+                
+                updatePreview();
+                updateNavigationButtons();
+            }
+        }
+
+        function selectOption(index) {
+            const options = document.querySelectorAll('.option-item');
+            options.forEach(option => option.classList.remove('correct'));
+            options[index].classList.add('correct');
+        }
+
+        function checkAnswer() {
+            const question = currentQuestions[currentQuestionIndex];
+            const correctAnswers = question.correct_answers || question.answer || [];
+            
+            const options = document.querySelectorAll('.option-item');
+            options.forEach((option, index) => {
+                option.classList.remove('correct');
+                if (correctAnswers.includes(index) || correctAnswers.includes(index.toString())) {
+                    option.classList.add('correct');
+                }
+            });
+        }
+
+        // Word Selection Functions
+        let selectedWords = [];
+
+        function selectWord(index) {
+            const wordOption = document.querySelector(`[data-index="${index}"]`);
+            
+            if (wordOption.classList.contains('selected')) {
+                return; // Already selected
+            }
+            
+            // Mark as selected
+            wordOption.classList.add('selected');
+            
+            // Add to selected words
+            const wordText = wordOption.textContent;
+            selectedWords.push({ index, text: wordText });
+            
+            updateSelectedWordsDisplay();
+        }
+
+        function updateSelectedWordsDisplay() {
+            const selectedWordsContainer = document.getElementById('selectedWords');
+            selectedWordsContainer.innerHTML = selectedWords.map((word, position) => `
+                <span class="selected-word" onclick="removeSelectedWord(${position})">
+                    ${word.text}
+                </span>
+            `).join('');
+        }
+
+        function removeSelectedWord(position) {
+            const removedWord = selectedWords[position];
+            
+            // Remove from selected words
+            selectedWords.splice(position, 1);
+            
+            // Unmark the original option
+            const wordOption = document.querySelector(`[data-index="${removedWord.index}"]`);
+            if (wordOption) {
+                wordOption.classList.remove('selected');
+            }
+            
+            updateSelectedWordsDisplay();
+        }
+
+        function clearSelection() {
+            // Clear all selected words
+            selectedWords = [];
+            
+            // Unmark all options
+            document.querySelectorAll('.word-option.selected').forEach(option => {
+                option.classList.remove('selected');
+            });
+            
+            updateSelectedWordsDisplay();
+        }
+
+        function checkWordOrder() {
+            const question = currentQuestions[currentQuestionIndex];
+            const correctAnswers = question.correct_answers || [];
+            
+            // Get selected word indices in order
+            const selectedIndices = selectedWords.map(word => word.index.toString());
+            
+            // Check if the order matches correct answers
+            const isCorrect = selectedIndices.length === correctAnswers.length &&
+                            selectedIndices.every((index, pos) => index === correctAnswers[pos]);
+            
+            const selectedWordsArea = document.querySelector('.selected-words-area');
+            
+            if (isCorrect) {
+                selectedWordsArea.classList.remove('incorrect-order');
+                selectedWordsArea.classList.add('correct-order');
+                
+                // Show success message
+                setTimeout(() => {
+                    alert('🎉 Correct! Well done!');
+                    selectedWordsArea.classList.remove('correct-order');
+                }, 100);
+            } else {
+                selectedWordsArea.classList.remove('correct-order');
+                selectedWordsArea.classList.add('incorrect-order');
+                
+                // Show the correct order
+                setTimeout(() => {
+                    const correctOrder = correctAnswers.map(index => {
+                        const option = question.options[parseInt(index)];
+                        return option ? (option.text || option) : '';
+                    }).join(' ');
+                    
+                    alert(`❌ Incorrect. The correct order is: "${correctOrder}"`);
+                    selectedWordsArea.classList.remove('incorrect-order');
+                }, 100);
+            }
+        }
+
+        function copyCurrentQuestion() {
+            if (currentQuestions.length === 0) {
+                alert('No question to copy.');
+                return;
+            }
+            
+            const question = currentQuestions[currentQuestionIndex];
+            const questionJson = JSON.stringify(question, null, 2);
+            
+            // Try to use the modern Clipboard API
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(questionJson).then(() => {
+                    showCopySuccess('Question copied to clipboard! 📋');
+                }).catch(err => {
+                    console.error('Failed to copy using Clipboard API:', err);
+                    fallbackCopy(questionJson);
+                });
+            } else {
+                // Fallback for older browsers or non-HTTPS
+                fallbackCopy(questionJson);
+            }
+        }
+
+        function fallbackCopy(text) {
+            // Create a temporary textarea element
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            
+            // Select and copy the text
+            textarea.select();
+            textarea.setSelectionRange(0, 99999); // For mobile devices
+            
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showCopySuccess('Question copied to clipboard! 📋');
+                } else {
+                    showCopyError('Failed to copy question. Please copy manually from the JSON panel.');
+                }
+            } catch (err) {
+                console.error('Fallback copy failed:', err);
+                showCopyError('Copy not supported. Please copy manually from the JSON panel.');
+            } finally {
+                document.body.removeChild(textarea);
+            }
+        }
+
+        function showCopySuccess(message) {
+            // Create a temporary success message
+            const successMsg = document.createElement('div');
+            successMsg.textContent = message;
+            successMsg.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #28a745;
+                color: white;
+                padding: 10px 20px;
+                border-radius: 5px;
+                z-index: 10000;
+                font-size: 14px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            `;
+            
+            document.body.appendChild(successMsg);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                if (document.body.contains(successMsg)) {
+                    document.body.removeChild(successMsg);
+                }
+            }, 3000);
+        }
+
+        function showCopyError(message) {
+            // Create a temporary error message
+            const errorMsg = document.createElement('div');
+            errorMsg.textContent = message;
+            errorMsg.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #dc3545;
+                color: white;
+                padding: 10px 20px;
+                border-radius: 5px;
+                z-index: 10000;
+                font-size: 14px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            `;
+            
+            document.body.appendChild(errorMsg);
+            
+            // Remove after 5 seconds
+            setTimeout(() => {
+                if (document.body.contains(errorMsg)) {
+                    document.body.removeChild(errorMsg);
+                }
+            }, 5000);
+        }
+
+        function duplicateQuestion() {
+            if (currentQuestions.length === 0) return;
+            
+            const question = JSON.parse(JSON.stringify(currentQuestions[currentQuestionIndex]));
+            // Assign a new index to avoid conflicts
+            const maxIndex = Math.max(...currentQuestions.map(q => q.index !== undefined ? q.index : 0));
+            question.index = maxIndex + 1;
+            currentQuestions.splice(currentQuestionIndex + 1, 0, question);
+            updatePreview();
+            updateNavigationButtons();
+        }
+
+        function deleteQuestion() {
+            if (currentQuestions.length <= 1) {
+                alert('Cannot delete the last question.');
+                return;
+            }
+            
+            currentQuestions.splice(currentQuestionIndex, 1);
+            if (currentQuestionIndex >= currentQuestions.length) {
+                currentQuestionIndex = currentQuestions.length - 1;
+            }
+            updatePreview();
+            updateNavigationButtons();
+        }
+
+        function moveQuestion(direction) {
+            const newIndex = currentQuestionIndex + direction;
+            if (newIndex >= 0 && newIndex < currentQuestions.length) {
+                // Swap questions
+                const temp = currentQuestions[currentQuestionIndex];
+                currentQuestions[currentQuestionIndex] = currentQuestions[newIndex];
+                currentQuestions[newIndex] = temp;
+                
+                currentQuestionIndex = newIndex;
+                updatePreview();
+                updateNavigationButtons();
+            }
+        }
+
+        // Test function for multi-question preview
+        function testMultiPreview() {
+            const testQuestions = [
+                {
+                    index: 1,
+                    question_mode: "CHOOSE",
+                    question_chunks: [{ text: "What is the capital of Mongolia?" }],
+                    options: [
+                        { text: "Ulaanbaatar", type: "TEXT" },
+                        { text: "Beijing", type: "TEXT" },
+                        { text: "Moscow", type: "TEXT" }
+                    ],
+                    correct_answers: ["0"]
+                },
+                {
+                    index: 2,
+                    answer_mode: "SELECT_WORDS",
+                    question_mode: "TRANSLATE",
+                    question_chunks: [{ text: "Тэмцээн хаана болох вэ?" }],
+                    options: [
+                        { text: "is", type: "TEXT" },
+                        { text: "the", type: "TEXT" },
+                        { text: "competition", type: "TEXT" },
+                        { text: "Where", type: "TEXT" },
+                        { text: "?", type: "TEXT" }
+                    ],
+                    correct_answers: ["3", "0", "1", "2", "4"]
+                },
+                {
+                    index: 3,
+                    question_mode: "CHOOSE",
+                    question_chunks: [{ text: "How do you say 'hello' in Mongolian?" }],
+                    options: [
+                        { text: "Сайн байна уу", type: "TEXT" },
+                        { text: "Баяртай", type: "TEXT" },
+                        { text: "Баярлалаа", type: "TEXT" }
+                    ],
+                    correct_answers: ["0"]
+                }
+            ];
+            
+            console.log('🧪 Testing with sample questions:', testQuestions);
+            showPreview(testQuestions);
+        }
+
+        // Debug Functions
+        async function checkHealth() {
+            try {
+                console.log('🔧 DEBUG: Checking server health...');
+                const response = await fetch('/health');
+                const health = await response.json();
+                console.log('🔧 DEBUG: Health check result:', health);
+                
+                const statusMsg = `
+                    🔧 Debug Info:
+                    • Server Status: ${health.status}
+                    • Gemini Configured: ${health.gemini_configured}
+                    • Model: ${health.gemini_model || 'Not set'}
+                    • API Key Set: ${health.api_key_set}
+                `;
+                alert(statusMsg);
+                
+            } catch (error) {
+                console.error('🔧 DEBUG: Health check failed:', error);
+                alert(`Health check failed: ${error.message}`);
+            }
+        }
+
+        async function runDebugTests() {
+            try {
+                console.log('🔧 DEBUG: Running debug tests...');
+                
+                if (!uploadedData) {
+                    alert('Please upload a JSON file first to run debug tests.');
+                    return;
+                }
+
+                const testData = {
+                    prompt: document.getElementById('promptInput').value.trim() || "Test prompt",
+                    data: uploadedData
+                };
+
+                console.log('🔧 DEBUG: Test data:', testData);
+
+                const response = await fetch('/debug', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(testData)
+                });
+
+                const debugResult = await response.json();
+                console.log('🔧 DEBUG: Debug result:', debugResult);
+
+                const debugMsg = `
+                    🔧 Debug Results:
+                    • Data Keys: ${debugResult.received_data?.keys?.join(', ') || 'None'}
+                    • Prompt Length: ${debugResult.received_data?.prompt_length || 0}
+                    • Data Type: ${debugResult.received_data?.data_type || 'Unknown'}
+                    • Data Size: ${debugResult.received_data?.data_size || 0} chars
+                    • Model Configured: ${debugResult.model_status?.configured}
+                    • API Key Set: ${debugResult.model_status?.api_key_set}
+                `;
+                alert(debugMsg);
+
+            } catch (error) {
+                console.error('🔧 DEBUG: Debug tests failed:', error);
+                alert(`Debug tests failed: ${error.message}`);
+            }
+        }
+    </script>
+</body>
+</html>
